@@ -1,0 +1,13 @@
+# 不需要进行权限控制的地址
+common :
+   noauthurls :
+     -  /druid/**
+     - /websocket/*
+     - swagger-ui.html
+     - /swagger-resources
+     - /v2/api-docs
+     - /webjars/springfox-swagger-ui/**
+     - /images/**
+     - /configuration/**
+     - /login
+

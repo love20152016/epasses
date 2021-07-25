@@ -1,0 +1,27 @@
+{
+  "hints": [],
+  "groups": [
+    {
+      "sourceType": "com.shiro.ShiroConfig",
+      "name": "common",
+      "type": "com.shiro.ShiroConfig"
+    }
+  ],
+  "properties": [
+    {
+      "sourceType": "com.shiro.ShiroConfig",
+      "name": "common.ev",
+      "type": "org.springframework.core.env.Environment"
+    },
+    {
+      "sourceType": "com.shiro.ShiroConfig",
+      "name": "common.noauthurls",
+      "type": "java.util.List<java.lang.Object>"
+    },
+    {
+      "sourceType": "com.shiro.ShiroConfig",
+      "name": "common.url-and-method-set",
+      "type": "java.util.Map<java.lang.String,java.lang.String>"
+    }
+  ]
+}

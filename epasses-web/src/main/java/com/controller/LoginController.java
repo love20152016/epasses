@@ -1,0 +1,112 @@
+package com.controller;
+
+import com.alibaba.fastjson.JSONObject;
+import com.annotation.*;
+import com.config.ResponseHelper;
+import com.config.ResponseModel;
+import com.entity.User;
+import com.service.IUserService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
+import org.apache.shiro.authz.annotation.RequiresPermissions;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import springfox.documentation.annotations.ApiIgnore;
+import util.ComUtil;
+
+import java.util.Map;
+
+/**
+ *  登录接口
+ * @author liugh
+ * @since 2018-05-03
+ */
+@RestController
+@Api(description="身份认证模块")
+public class LoginController {
+    @Autowired
+    private IUserService userService;
+
+
+    @ApiOperation(value="手机用户名邮箱密码登录", notes="body体参数,不需要Authorization",produces = "application/json")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "requestJson", value = "{\"identity\":\"13888888888\",\"password\":\"123456\"}"
+                    , required = true, dataType = "String",paramType="body")
+    })
+    @PostMapping("/login")
+    //5秒产生一个令牌,放入容量为0.3的令牌桶
+    @AccessLimit(perSecond=0.3,timeOut = 5000)
+    public ResponseModel<Map<String, Object>> login(
+            @ValidationParam("identity,password")@RequestBody JSONObject requestJson) throws Exception{
+        return ResponseHelper.succeed(userService.checkMobileAndPasswd(requestJson));
+    }
+
+    @ApiIgnore
+
+    @PostMapping("/admin/register")
+    //添加用户的按钮权限
+    @RequiresPermissions("user:add")
+    public ResponseModel register(
+            @ValidationParam("username,roleName")@RequestBody JSONObject requestJson,
+            @CurrentUser User user) throws Exception{
+        requestJson.put("createUser", user.getUserNo());
+        return ResponseHelper.succeed(userService.insertUserByAdmin(requestJson));
+    }
+
+
+    @ApiOperation(value="短信验证码登录", notes="body体参数,不需要Authorization",produces = "application/json")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "requestJson", value = "{\"mobile\":\"13888888888\",\"captcha\":\"5780\"}"
+                    , required = true, dataType = "String",paramType="body")
+    })
+    @PostMapping("/login/captcha")
+    @Log(action="SignInByCaptcha",modelName= "Login",description="前台短信验证码登录接口")
+    public ResponseModel<Map<String, Object>> loginBycaptcha(
+            @ValidationParam("mobile,captcha")@RequestBody JSONObject requestJson) throws Exception{
+        return ResponseHelper.succeed( userService.checkMobileAndCatcha(requestJson));
+    }
+
+
+
+    @ApiOperation(value="手机验证码注册", notes="body体参数,不需要Authorization",produces = "application/json")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "requestJson", value = "{\"username\":\"liugh\",\"mobile\":\"13888888888\",</br>" +
+                    "\"captcha\":\"5780\",\"password\":\"123456\",</br>\"rePassword\":\"123456\",\"job\":\"java开发\"," +
+                    "</br>\"unit(可不传)\":\"xxx公司\"}"
+                    , required = true, dataType = "String",paramType="body")
+    })
+    @PostMapping("/register")
+    @Log(action="register",modelName= "Login",description="注册接口")
+    public ResponseModel<User> register(@ValidationParam("username,password,rePassword,mobile,captcha,job")
+                                       @RequestBody JSONObject requestJson)throws Exception {
+        return ResponseHelper.succeed( userService.checkAndRegisterUser(requestJson));
+    }
+
+
+    @ApiOperation(value="忘记密码", notes="body体参数,不需要Authorization",produces = "application/json")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "requestJson", value = "{\"mobile\":\"17765071663\",\"captcha\":\"5780\",</br>" +
+                    "\"password\":\"123456\",\"rePassword\":\"123456\"}"
+                    , required = true, dataType = "String",paramType="body")
+    })
+    @PostMapping("/forget/password")
+    public ResponseModel<User> resetPassWord (@ValidationParam("mobile,captcha,password,rePassword")
+                                               @RequestBody JSONObject requestJson ) throws Exception{
+        return ResponseHelper.succeed(userService.updateForgetPasswd(requestJson));
+    }
+
+    /**
+     * 检查用户是否注册过
+     * @param mobile
+     * @return
+     * @throws Exception
+     */
+    @GetMapping("/check/mobile")
+    @ApiIgnore
+    public ResponseModel loginBycaptcha(@RequestParam("mobile") String mobile) throws Exception{
+        User user = userService.getUserByMobile(mobile);
+        return ResponseHelper.succeed(!ComUtil.isEmpty(user));
+    }
+}
